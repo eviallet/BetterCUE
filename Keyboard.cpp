@@ -1,18 +1,17 @@
 #include "Keyboard.h"
 
-Keyboard::Keyboard(QObject *parent)
-	: QObject(parent) {
+Keyboard::Keyboard() {
 	srand(time(0));
 	_engine = new std::default_random_engine(rand());
 	
 	CorsairPerformProtocolHandshake();
 	if (const auto error = CorsairGetLastError()) {
-		qCritical() << "Handshake failed: " << errorToString(error);
+		std::cout << "Handshake failed: " << errorToString(error);
 		return;
 	}
 }
 
-QString Keyboard::loadDeviceInfos() {
+std::string Keyboard::loadDeviceInfos() {
 	if (CorsairGetDeviceCount() >= 1) {
 		CorsairDeviceInfo* deviceInfo = CorsairGetDeviceInfo(0);
 		auto ledPositions = CorsairGetLedPositions();
@@ -31,23 +30,38 @@ QString Keyboard::loadDeviceInfos() {
 }
 
 void Keyboard::ledsRandom() {
-	continueExecution = !continueExecution;
-	if (continueExecution) {
-		_thread = new std::thread([this] {
-			std::vector<CorsairLedColor> _ledsAlphabetic;
-			for (char c = 'a'; c <= 'z'; c++)
-				_ledsAlphabetic.push_back(_leds->at(this->ledPos(c)));
-			while (continueExecution) {
-				for (int i = 0; i < _ledsAlphabetic.size(); i++) {
-					_ledsAlphabetic.at(i).r = this->random(0, 255);
-					_ledsAlphabetic.at(i).g = this->random(0, 255);
-					_ledsAlphabetic.at(i).b = this->random(0, 255);
+	continueExecution = true;
+	_thread = new std::thread([this] {
+		std::vector<CorsairLedColor> _ledsAlphabetic;
+		for (char c = 'a'; c <= 'z'; c++)
+			_ledsAlphabetic.push_back(_leds->at(this->ledPos(c)));
+		while (continueExecution) {
+			for (int i = 0; i < _ledsAlphabetic.size(); i++) {
+				// make at least one color at max luminosity for a better effet
+				int max = this->random(0, 2);
+				_ledsAlphabetic.at(i).r = this->random(0, 255);
+				_ledsAlphabetic.at(i).g = this->random(0, 255);
+				_ledsAlphabetic.at(i).b = this->random(0, 255);
+				switch (max) {
+				case 0:
+					_ledsAlphabetic.at(i).r = 255;
+					break;
+				case 1:
+					_ledsAlphabetic.at(i).g = 255;
+					break;
+				case 2:
+					_ledsAlphabetic.at(i).b = 255;
+					break;
 				}
-				CorsairSetLedsColorsAsync(static_cast<int>(_ledsAlphabetic.size()), _ledsAlphabetic.data(), nullptr, nullptr);
-				std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 			}
-		});
-	}
+			CorsairSetLedsColorsAsync(static_cast<int>(_ledsAlphabetic.size()), _ledsAlphabetic.data(), nullptr, nullptr);
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		}
+	});
+}
+
+void Keyboard::stop() {
+	continueExecution = false;
 }
 
 

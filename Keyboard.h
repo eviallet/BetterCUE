@@ -1,23 +1,22 @@
 #ifndef KEYBOARD_H
 #define KEYBOARD_H
 
-#include <QObject>
-#include <qdebug.h>
 #include <random>
 #include <thread>
+#include <atomic>
+#include <iostream>
 #include "lib/CUESDK/include/CUESDK.h"
 #include "lib/CUESDK/include/CUESDKGlobal.h"
 #include "lib/CUESDK/include/CorsairKeyIdEnum.h"
 #include "lib/CUESDK/include/CorsairLedIdEnum.h"
 
-class Keyboard : public QObject {
-	Q_OBJECT
+class Keyboard {
 public:
-	Keyboard(QObject *parent);
-	QString loadDeviceInfos();
+	Keyboard();
+	std::string loadDeviceInfos();
 	~Keyboard();
-public slots:
 	void ledsRandom();
+	void stop();
 private:
 	int ledPos(char a);
 	int random(int min, int max);
