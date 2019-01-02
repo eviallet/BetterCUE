@@ -15,6 +15,7 @@ public:
 	Keyboard();
 	std::string loadDeviceInfos();
 	~Keyboard();
+	void animateStaticKeys();
 	void ledsRandom();
 	void stop();
 private:

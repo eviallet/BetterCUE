@@ -29,32 +29,55 @@ std::string Keyboard::loadDeviceInfos() {
 	return "None";
 }
 
+void Keyboard::animateStaticKeys() {
+	//continueExecution = true;
+	//_thread = new std::thread([this] {
+		CorsairLedColor winLock; winLock.ledId = CLK_WinLock;
+		CorsairLedColor followLockScroll; followLockScroll.ledId = CLK_ScrollLock;
+		CorsairLedColor lum; lum.ledId = CLK_Brightness;
+		CorsairLedColor followPrntScrn; followPrntScrn.ledId = CLK_PrintScreen;
+		while (true) {
+			CorsairGetLedsColors(1, &followPrntScrn);
+			CorsairGetLedsColors(1, &followLockScroll);
+			winLock.r = followLockScroll.r;
+			winLock.g = followLockScroll.g;
+			winLock.b = followLockScroll.b;
+			lum.r = followPrntScrn.r;
+			lum.g = followPrntScrn.g;
+			lum.b = followPrntScrn.b;
+			CorsairSetLedsColorsAsync(1, &winLock, nullptr, nullptr);
+			CorsairSetLedsColorsAsync(1, &lum, nullptr, nullptr);
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+	//});
+}
+
 void Keyboard::ledsRandom() {
 	continueExecution = true;
 	_thread = new std::thread([this] {
-		std::vector<CorsairLedColor> _ledsAlphabetic;
+		std::vector<CorsairLedColor> ledsAlphabetic;
 		for (char c = 'a'; c <= 'z'; c++)
-			_ledsAlphabetic.push_back(_leds->at(this->ledPos(c)));
+			ledsAlphabetic.push_back(_leds->at(this->ledPos(c)));
 		while (continueExecution) {
-			for (int i = 0; i < _ledsAlphabetic.size(); i++) {
+			for (int i = 0; i < ledsAlphabetic.size(); i++) {
 				// make at least one color at max luminosity for a better effet
 				int max = this->random(0, 2);
-				_ledsAlphabetic.at(i).r = this->random(0, 255);
-				_ledsAlphabetic.at(i).g = this->random(0, 255);
-				_ledsAlphabetic.at(i).b = this->random(0, 255);
+				ledsAlphabetic.at(i).r = this->random(0, 255);
+				ledsAlphabetic.at(i).g = this->random(0, 255);
+				ledsAlphabetic.at(i).b = this->random(0, 255);
 				switch (max) {
 				case 0:
-					_ledsAlphabetic.at(i).r = 255;
+					ledsAlphabetic.at(i).r = 255;
 					break;
 				case 1:
-					_ledsAlphabetic.at(i).g = 255;
+					ledsAlphabetic.at(i).g = 255;
 					break;
 				case 2:
-					_ledsAlphabetic.at(i).b = 255;
+					ledsAlphabetic.at(i).b = 255;
 					break;
 				}
 			}
-			CorsairSetLedsColorsAsync(static_cast<int>(_ledsAlphabetic.size()), _ledsAlphabetic.data(), nullptr, nullptr);
+			CorsairSetLedsColorsAsync(static_cast<int>(ledsAlphabetic.size()), ledsAlphabetic.data(), nullptr, nullptr);
 			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 		}
 	});
